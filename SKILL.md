@@ -31,7 +31,7 @@ PageSpeed Insights now runs **Lighthouse 13** (Chrome 143+). This skill is calib
 
 ## 0. The Iron Law of Business Protection (Non-Negotiable)
 
-Performance is never just a lab score — it is delivering the first fold fast without breaking marketing attribution or conversion. Read [references/business-protection.md](file:///references/business-protection.md).
+Performance is never just a lab score — it is delivering the first fold fast without breaking marketing attribution or conversion. Read [references/business-protection.md](references/business-protection.md).
 1. **Never remove or break tracking**: GTM, GA4, Meta Pixel, Hotmart, and CRM scripts must be gracefully deferred, NEVER deleted.
 2. **Never drop query parameters / UTMs**: Redirects and canonicals must preserve campaign parameters (`utm_*`, `gclid`, `fbclid`).
 3. **Never lazy-load the LCP hero media**: Always specify `fetchpriority="high"`.
@@ -95,13 +95,13 @@ Determine the tech stack to apply the optimal strategy:
 - **Vite (React / Vue / Svelte)**: Configure Vite plugins for chunk splitting, image compression, and CSS minification.
 - **Astro**: Use `<Image />` component, client directives, and asset optimization.
 
-Refer to [references/framework-recipes.md](file:///references/framework-recipes.md) and production templates in [recipes/](file:///recipes/) (`nginx.conf`, `apache.htaccess`, `next.config.js`, `astro.config.mjs`).
+Refer to [references/framework-recipes.md](references/framework-recipes.md) and production templates in [recipes/](recipes/) (`nginx.conf`, `apache.htaccess`, `next.config.js`, `astro.config.mjs`).
 
 ---
 
 ## 2. Core Web Vitals & Performance (Target: 90+)
 
-Read [references/performance.md](file:///references/performance.md) for complete technical patterns.
+Read [references/performance.md](references/performance.md) for complete technical patterns.
 
 - **LCP (<2.5s)**: Preload hero image with `fetchpriority="high"`, eliminate render-blocking CSS/fonts, avoid lazy loading above the fold.
 - **CLS (<0.1)**: Declare explicit `width` and `height` on images/SVGs, use `font-display: swap`, reserve space for dynamic containers.
@@ -112,7 +112,7 @@ Read [references/performance.md](file:///references/performance.md) for complete
 
 ## 3. Accessibility (Target: 100, WCAG 2.2 AA)
 
-Read [references/accessibility.md](file:///references/accessibility.md).
+Read [references/accessibility.md](references/accessibility.md).
 
 - **Semantic HTML**: Use `<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<footer>`.
 - **Image Alt Text**: Descriptive `alt="..."` for informative images; `alt="" aria-hidden="true"` for decorative graphics.
@@ -126,7 +126,7 @@ Read [references/accessibility.md](file:///references/accessibility.md).
 
 ## 4. Best Practices & Security (Target: 100)
 
-Read [references/best-practices.md](file:///references/best-practices.md).
+Read [references/best-practices.md](references/best-practices.md).
 
 - **Doctype**: Exact `<!DOCTYPE html>`.
 - **Security Headers**: HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`.
@@ -136,7 +136,7 @@ Read [references/best-practices.md](file:///references/best-practices.md).
 
 ## 5. SEO & GEO (Generative Engine Optimization)
 
-Read [references/seo.md](file:///references/seo.md) and [references/geo.md](file:///references/geo.md).
+Read [references/seo.md](references/seo.md) and [references/geo.md](references/geo.md).
 
 - **Heading Structure**: Single `<h1>` per page with a strict logical `<h2>`-`<h6>` hierarchy; for personal/authority brands, always include the target entity name in the `<h1>`.
 - **Rich JSON-LD Schema**: Implement `@graph` containing `WebPage`, `Speakable`, `FAQPage`, `Article`, and `Organization`. Reference the TL;DR block in `speakable.cssSelector`.

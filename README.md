@@ -101,24 +101,33 @@ If you prefer installing from the complete [skills-alexlivre](https://github.com
 
 ### Option 3 — Manual Installation
 
+First, clone the repository:
+
+```bash
+git clone https://github.com/alexlivre/pagespeed-optimizer-alexlivre.git
+```
+
 #### Global Install:
 ```bash
 # Claude Code & Universal Agent Skills
-cp -r pagespeed-optimizer-alexlivre ~/.agents/skills/
-cp -r pagespeed-optimizer-alexlivre ~/.claude/skills/
+mkdir -p ~/.agents/skills ~/.claude/skills
+cp -r pagespeed-optimizer-alexlivre ~/.agents/skills/pagespeed-optimizer-alexlivre
+cp -r pagespeed-optimizer-alexlivre ~/.claude/skills/pagespeed-optimizer-alexlivre
 
 # OpenCode
-cp -r pagespeed-optimizer-alexlivre ~/.opencode/skills/
+mkdir -p ~/.opencode/skills
+cp -r pagespeed-optimizer-alexlivre ~/.opencode/skills/pagespeed-optimizer-alexlivre
 
 # Antigravity CLI (AGY)
-cp -r pagespeed-optimizer-alexlivre ~/.gemini/antigravity-cli/skills/
+mkdir -p ~/.gemini/antigravity-cli/skills
+cp -r pagespeed-optimizer-alexlivre ~/.gemini/antigravity-cli/skills/pagespeed-optimizer-alexlivre
 ```
 
 #### Project-Level Install:
 ```bash
-# In your project root
+# In your target project root
 mkdir -p .agents/skills
-cp -r /path/to/pagespeed-optimizer-alexlivre .agents/skills/
+cp -r /path/to/pagespeed-optimizer-alexlivre .agents/skills/pagespeed-optimizer-alexlivre
 ```
 
 The agent will auto-detect the skill by matching the `description` field against your prompt.
@@ -329,7 +338,7 @@ Optimizing performance must never break conversion funnels or marketing attribut
 3. **Never lazy-load the LCP hero media**: Hero images must use `fetchpriority="high"` with preloads.
 4. **Never compromise conversion forms**: Above-the-fold form fields and CTA buttons must maintain touch target sizes (≥ 48×48px) and accessible labels.
 
-Read [references/business-protection.md](file:///references/business-protection.md) for complete safety guidelines.
+Read [references/business-protection.md](references/business-protection.md) for complete safety guidelines.
 
 ---
 
