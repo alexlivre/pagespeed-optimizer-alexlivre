@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "example-web-service",
+  "version": "1.0.0",
+  "description": "WebMCP declarative browser agent manifest conforming to Chrome 149+ origin trial specification.",
+  "endpoints": {
+    "manifest": "https://example.com/mcp-manifest.json",
+    "tools": [
+      {
+        "name": "submit_inquiry",
+        "description": "Submits a user contact or quote inquiry form.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "message": { "type": "string" }
+          },
+          "required": ["name", "email", "message"]
+        },
+        "targetUrl": "https://example.com/api/inquiry",
+        "method": "POST"
+      }
+    ]
+  }
+}

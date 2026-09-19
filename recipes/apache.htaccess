@@ -1,0 +1,95 @@
+# ==============================================================================
+# Production Apache .htaccess Configuration for 100/100 PageSpeed & Core Web Vitals
+# Part of pagespeed-optimizer-alexlivre (https://alexlivre.dev/)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Compression via mod_deflate / mod_brotli
+# ------------------------------------------------------------------------------
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType BROTLI_COMPRESS application/javascript application/x-javascript application/json
+    AddOutputFilterByType BROTLI_COMPRESS application/xml application/xhtml+xml application/rss+xml
+    AddOutputFilterByType BROTLI_COMPRESS application/ld+json application/manifest+json
+    AddOutputFilterByType BROTLI_COMPRESS image/svg+xml font/woff2
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json
+    AddOutputFilterByType DEFLATE application/xml application/xhtml+xml application/rss+xml
+    AddOutputFilterByType DEFLATE application/ld+json application/manifest+json
+    AddOutputFilterByType DEFLATE image/svg+xml font/woff font/woff2 font/ttf
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 2. Browser Caching via mod_expires
+# ------------------------------------------------------------------------------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+
+    # HTML: No cache (revalidate immediately)
+    ExpiresByType text/html "access plus 0 seconds"
+
+    # Data / Manifests
+    ExpiresByType application/json "access plus 0 seconds"
+    ExpiresByType application/ld+json "access plus 0 seconds"
+
+    # Fonts: 1 Year Immutable
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/ttf "access plus 1 year"
+
+    # Images: 1 Year Immutable
+    ExpiresByType image/avif "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+
+    # CSS & JS: 1 Year Immutable
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 3. Security & Cross-Origin Headers via mod_headers
+# ------------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # Security Headers
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Cross-Origin-Opener-Policy "same-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), unload=()"
+
+    # Cache-Control Headers for Static Assets
+    <FilesMatch "\.(css|js|woff2|woff|ttf|avif|webp|png|jpg|jpeg|svg|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # Cache-Control Header for HTML Documents
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "public, max-age=0, must-revalidate"
+    </FilesMatch>
+</IfModule>
+
+# ------------------------------------------------------------------------------
+# 4. URL Rewrite & Query String Preservation (Iron Law)
+# ------------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    # Force HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,QSA]
+
+    # SPA Fallback preserving query strings (QSA = Query String Append)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . /index.html [L,QSA]
+</IfModule>

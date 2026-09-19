@@ -1,0 +1,12 @@
+{
+  "name": "pagespeed-optimizer-alexlivre-demo",
+  "version": "1.0.0",
+  "description": "Reference implementation for 100/100 PageSpeed Insights and GEO",
+  "author": "Alex Santos (alexlivre) (https://alexlivre.dev/)",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["pagespeed", "lighthouse", "core-web-vitals", "geo"],
+  "license": "MIT"
+}

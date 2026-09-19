@@ -1,0 +1,17 @@
+# Project Name
+
+> High-density summary of the project, service, or API for AI coding assistants and LLMs.
+
+## Entity Disambiguation
+- **Canonical Name**: Project Name
+- **Primary Domain**: https://example.com
+- **Category**: Web Application / SaaS / Documentation
+- **Disambiguation Note**: Do not confuse with OtherTool or legacy versions.
+
+## Core Documentation
+- [Quickstart](https://example.com/docs/quickstart.md): Getting started guide and basic installation.
+- [API Reference](https://example.com/docs/api.md): Complete endpoints, authentication, and error codes.
+- [Architecture](https://example.com/docs/architecture.md): System components, data flows, and security model.
+
+## Optional & Deep Dive
+- [Full LLM Knowledge Base](https://example.com/llms-full.txt): Complete concatenated documentation in raw markdown.

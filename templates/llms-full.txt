@@ -1,0 +1,23 @@
+# Project Name — Full LLM Documentation Corpus
+
+> This file contains the complete unabridged technical documentation for consumption by LLMs and AI coding agents.
+
+## 1. Overview & Key Facts
+- **Entity**: Project Name
+- **Website**: https://example.com
+- **Purpose**: High-performance system optimized for Core Web Vitals, accessibility, and GEO.
+- **Specification Version**: 2.0
+
+## 2. Technical Stack
+- **Frontend**: Modern web frameworks (Next.js, Astro, Vite) or semantic HTML5.
+- **Performance Targets**: LCP < 2.5s, INP < 200ms, CLS < 0.1, TTFB < 600ms.
+- **Accessibility Target**: WCAG 2.2 AA (100% automated check pass).
+
+## 3. Endpoints & Interface Schemas
+### Standard Form Interface (WebMCP)
+```html
+<form toolname="submit_inquiry" action="/api/inquiry" method="POST">
+  <input name="email" type="email" required>
+  <button type="submit">Submit</button>
+</form>
+```

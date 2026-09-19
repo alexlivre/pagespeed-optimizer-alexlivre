@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#g)" />
+  <circle cx="600" cy="240" r="110" fill="#38bdf8" opacity="0.85" />
+  <text x="600" y="420" fill="#f8fafc" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="700" text-anchor="middle">PageSpeed 100 Reference Demo</text>
+  <text x="600" y="470" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="24" text-anchor="middle">Core Web Vitals &bull; WCAG 2.2 AA &bull; GEO Ready</text>
+</svg>

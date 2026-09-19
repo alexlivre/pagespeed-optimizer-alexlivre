@@ -1,0 +1,56 @@
+# ==============================================================================
+# Production robots.txt for AI Search, GEO & Crawler Governance
+# Part of pagespeed-optimizer-alexlivre (https://alexlivre.dev/)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# PROFILE A (RECOMMENDED): Allow AI Search (Referrals) / Block Training Scrapers
+# Use this when you want visibility and citations in ChatGPT Search and Perplexity,
+# but do not want your content scraped for AI model training.
+# ------------------------------------------------------------------------------
+
+# Standard Search Engines (Always Allowed)
+User-agent: Googlebot
+User-agent: Bingbot
+Allow: /
+
+# AI Search Engines (Allowed for Referral Traffic & Citations)
+User-agent: OAI-SearchBot
+User-agent: PerplexityBot
+User-agent: Claude-Web
+Allow: /
+
+# AI Model Training Scrapers (Blocked)
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: CCBot
+User-agent: Applebot-Extended
+User-agent: anthropic-ai
+User-agent: Bytespider
+Disallow: /
+
+# Default Fallback for All Other Crawlers
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+
+# XML Sitemap Reference
+Sitemap: https://example.com/sitemap.xml
+
+# ------------------------------------------------------------------------------
+# PROFILE B (OPTIONAL): STRICT BLOCK OF ALL AI BOTS
+# Uncomment below if you want zero AI bot interaction:
+# ------------------------------------------------------------------------------
+# User-agent: GPTBot
+# User-agent: ChatGPT-User
+# User-agent: OAI-SearchBot
+# User-agent: ClaudeBot
+# User-agent: Claude-Web
+# User-agent: PerplexityBot
+# User-agent: Google-Extended
+# User-agent: CCBot
+# User-agent: Applebot-Extended
+# Disallow: /
