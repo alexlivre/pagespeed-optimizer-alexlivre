@@ -1,5 +1,8 @@
 # PageSpeed Insights & GEO Optimizer (`pagespeed-optimizer-alexlivre`)
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/alexlivre/pagespeed-optimizer-alexlivre/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > **Conceived and developed by [Alex Santos (alexlivre)](https://alexlivre.dev/)** • [GitHub: @alexlivre](https://github.com/alexlivre) • [Collection: skills-alexlivre](https://github.com/alexlivre/skills-alexlivre)
 
 A universal AI agent skill for analyzing, auditing, and optimizing web applications to **100/100** on [PageSpeed Insights](https://pagespeed.web.dev/) and Google Lighthouse 13+ across **Performance**, **Accessibility**, **Best Practices**, **SEO**, and **GEO (Generative Engine Optimization)** for AI search engines (Perplexity, ChatGPT Search, Gemini, Google AI Overviews, Claude).
