@@ -80,7 +80,7 @@ npx skills add alexlivre/pagespeed-optimizer-alexlivre -y
 
 ### Option 2 — From the `skills-alexlivre` Collection / One-Liner
 
-If you prefer installing from the complete [skills-alexlivre](https://github.com/alexlivre/skills-alexlivre) collection:
+If you prefer installing via the centralized [skills-alexlivre](https://github.com/alexlivre/skills-alexlivre) installer scripts:
 
 - **Linux / macOS / WSL**:
   ```bash
@@ -92,42 +92,51 @@ If you prefer installing from the complete [skills-alexlivre](https://github.com
   irm https://raw.githubusercontent.com/alexlivre/skills-alexlivre/main/install.ps1 | iex
   ```
 
-- **Via Monorepo Package Specifier**:
-  ```bash
-  npx skills add alexlivre/skills-alexlivre@pagespeed-optimizer-alexlivre -g -y
-  ```
-
 ---
 
 ### Option 3 — Manual Installation
 
-First, clone the repository:
+Since this repository is a standalone skill, you can install it using either of the following methods:
+
+#### Approach A: Direct Git Clone (Recommended — 1 Command)
+
+Clone directly into your AI coding tool's global skills directory:
 
 ```bash
-git clone https://github.com/alexlivre/pagespeed-optimizer-alexlivre.git
+# Universal Agent Skills (Claude Code, Antigravity, OpenCode, Cursor, Windsurf)
+git clone https://github.com/alexlivre/pagespeed-optimizer-alexlivre.git ~/.agents/skills/pagespeed-optimizer-alexlivre
+
+# Claude Code dedicated directory (optional)
+git clone https://github.com/alexlivre/pagespeed-optimizer-alexlivre.git ~/.claude/skills/pagespeed-optimizer-alexlivre
+
+# Project-Level (within your project root)
+git clone https://github.com/alexlivre/pagespeed-optimizer-alexlivre.git .agents/skills/pagespeed-optimizer-alexlivre
 ```
 
-#### Global Install:
+#### Approach B: From Cloned Repository (Inside the Skill Root)
+
+If you have already cloned or downloaded this repository, copy the root contents (where `SKILL.md` is located) into the destination folder:
+
+**Linux / macOS / WSL (Bash):**
 ```bash
-# Claude Code & Universal Agent Skills
-mkdir -p ~/.agents/skills ~/.claude/skills
-cp -r pagespeed-optimizer-alexlivre ~/.agents/skills/pagespeed-optimizer-alexlivre
-cp -r pagespeed-optimizer-alexlivre ~/.claude/skills/pagespeed-optimizer-alexlivre
+# Global install
+mkdir -p ~/.agents/skills/pagespeed-optimizer-alexlivre
+cp -r . ~/.agents/skills/pagespeed-optimizer-alexlivre/
 
-# OpenCode
-mkdir -p ~/.opencode/skills
-cp -r pagespeed-optimizer-alexlivre ~/.opencode/skills/pagespeed-optimizer-alexlivre
-
-# Antigravity CLI (AGY)
-mkdir -p ~/.gemini/antigravity-cli/skills
-cp -r pagespeed-optimizer-alexlivre ~/.gemini/antigravity-cli/skills/pagespeed-optimizer-alexlivre
+# Project-level install (run inside your target project)
+mkdir -p .agents/skills/pagespeed-optimizer-alexlivre
+cp -r /path/to/cloned/pagespeed-optimizer-alexlivre/. .agents/skills/pagespeed-optimizer-alexlivre/
 ```
 
-#### Project-Level Install:
-```bash
-# In your target project root
-mkdir -p .agents/skills
-cp -r /path/to/pagespeed-optimizer-alexlivre .agents/skills/pagespeed-optimizer-alexlivre
+**Windows (PowerShell):**
+```powershell
+# Global install
+New-Item -ItemType Directory -Force -Path "$HOME\.agents\skills\pagespeed-optimizer-alexlivre"
+Copy-Item -Recurse -Force .\* "$HOME\.agents\skills\pagespeed-optimizer-alexlivre\"
+
+# Project-level install (run inside your target project)
+New-Item -ItemType Directory -Force -Path ".\.agents\skills\pagespeed-optimizer-alexlivre"
+Copy-Item -Recurse -Force "C:\path\to\cloned\pagespeed-optimizer-alexlivre\*" ".\.agents\skills\pagespeed-optimizer-alexlivre\"
 ```
 
 The agent will auto-detect the skill by matching the `description` field against your prompt.
