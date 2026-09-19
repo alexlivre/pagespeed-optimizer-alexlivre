@@ -61,9 +61,23 @@ pagespeed-optimizer-alexlivre/
 
 Part of the **[skills-alexlivre](https://github.com/alexlivre/skills-alexlivre)** repository. The skill works seamlessly across all major AI agent and vibe coding tools (**Claude Code**, **OpenCode**, **Antigravity CLI**, **Cursor**, **Windsurf**, and **Roo Code**).
 
-### Option 1 — One-Liner Quick Install (Recommended)
+### Option 1 — Via `skills` CLI (Canonical & Recommended)
 
-Installs the skill directly to your system's global agent directories without needing to manually clone the repository:
+Install directly from this repository using the standard `skills` package manager:
+
+```bash
+# Global install (all projects)
+npx skills add alexlivre/pagespeed-optimizer-alexlivre -g -y
+
+# Project-level install
+npx skills add alexlivre/pagespeed-optimizer-alexlivre -y
+```
+
+---
+
+### Option 2 — From the `skills-alexlivre` Collection / One-Liner
+
+If you prefer installing from the complete [skills-alexlivre](https://github.com/alexlivre/skills-alexlivre) collection:
 
 - **Linux / macOS / WSL**:
   ```bash
@@ -75,38 +89,14 @@ Installs the skill directly to your system's global agent directories without ne
   irm https://raw.githubusercontent.com/alexlivre/skills-alexlivre/main/install.ps1 | iex
   ```
 
----
-
-### Option 2 — Via `skills` Package Manager (`skills.sh`)
-
-```bash
-# Global install (all projects)
-npx skills add alexlivre/skills-alexlivre@pagespeed-optimizer-alexlivre -g -y
-
-# Project-level install
-npx skills add alexlivre/skills-alexlivre@pagespeed-optimizer-alexlivre -y
-```
+- **Via Monorepo Package Specifier**:
+  ```bash
+  npx skills add alexlivre/skills-alexlivre@pagespeed-optimizer-alexlivre -g -y
+  ```
 
 ---
 
-### Option 3 — Via Repository Installer Scripts
-
-If you cloned the [skills-alexlivre](https://github.com/alexlivre/skills-alexlivre) repository:
-
-```bash
-# Windows PowerShell
-.\install.ps1 -Skill pagespeed-optimizer-alexlivre
-
-# Linux / macOS Bash
-./install.sh -s pagespeed-optimizer-alexlivre
-
-# Cross-platform Node.js
-node install.mjs --skill pagespeed-optimizer-alexlivre
-```
-
----
-
-### Option 4 — Manual Installation
+### Option 3 — Manual Installation
 
 #### Global Install:
 ```bash
