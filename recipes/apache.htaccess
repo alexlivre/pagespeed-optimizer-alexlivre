@@ -24,6 +24,12 @@
 
 # ------------------------------------------------------------------------------
 # 2. Browser Caching via mod_expires
+#
+# Immutable caching (1 year) is only safe when the URL CHANGES with the file:
+# fingerprint the filename (app.a1b2c3.css) or append ?v=<hash>. This applies to
+# the CSS/JS entries below and to the FilesMatch Cache-Control block in section 3.
+# Without it, visitors keep the old stylesheet for a year after a deploy and the
+# update appears to do nothing.
 # ------------------------------------------------------------------------------
 <IfModule mod_expires.c>
     ExpiresActive On

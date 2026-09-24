@@ -17,7 +17,7 @@ export default defineConfig({
     remotePatterns: [{ protocol: 'https' }],
   },
 
-  // 3. Instant Navigation & Prefetching (0s LCP on internal links)
+  // 3. Instant Navigation & Prefetching (starts the next page's load before the click)
   prefetch: {
     prefetchAll: true,
     defaultStrategy: 'hover', // Prefetches link targets on pointer hover
@@ -26,6 +26,10 @@ export default defineConfig({
   // 4. Output & Compression
   compressHTML: true,
   build: {
-    inlineStylesheets: 'auto', // Inlines critical CSS (<14KB) automatically
+    // 'auto' inlines only stylesheets smaller than Vite's assetsInlineLimit (4 KB by
+    // default) — not the 14 KB TCP roundtrip budget. Anything larger ships as a
+    // render-blocking <link>, which is the correct behaviour. Read performance.md §8
+    // before moving layout CSS to load asynchronously.
+    inlineStylesheets: 'auto',
   },
 });

@@ -162,6 +162,11 @@ import heroImg from '../assets/hero.png';
 }
 ```
 
+> **Immutable caching needs changing URLs.** The `/assets/(.*)` rule above sets a 1-year
+> immutable cache. That is only safe when those filenames are fingerprinted
+> (`app.a1b2c3.css`) or versioned with `?v=<hash>`. On a path that serves stable names —
+> a plain `/styles.css`, for instance — a deploy leaves visitors on the old file for a year.
+
 For the full CSP pattern with `strict-dynamic` + nonce, see `references/best-practices.md` section 2.1.
 
 ---
@@ -208,7 +213,7 @@ export default function Home() {
 
 ```tsx
 // app/products/[id]/page.tsx
-import { unstable_cacheLife, unstable_cacheTag } from 'next/cache';
+import { cacheLife, cacheTag } from 'next/cache';
 
 async function getProduct(id: string) {
   'use cache';
@@ -219,8 +224,10 @@ async function getProduct(id: string) {
   return res.json();
 }
 
-export default async function ProductPage({ params }: { params: { id: string } }) {
-  const product = await getProduct(params.id);
+// Next.js 15+ made `params` a Promise: it must be awaited.
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const product = await getProduct(id);
   return <ProductView product={product} />;
 }
 ```

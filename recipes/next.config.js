@@ -71,7 +71,12 @@ const nextConfig = {
           },
         ],
       },
-      // 1-Year Immutable Cache for static assets
+      // 1-Year Immutable Cache for static assets.
+      // Safe exactly as written because Next.js content-hashes every filename under
+      // /_next/static, so any change produces a new URL. Do NOT copy this rule onto a
+      // path that serves stable names (/public assets, or your own /assets folder):
+      // there you need fingerprinting or ?v=<hash> first, or a deploy leaves visitors
+      // on the old file for a year.
       {
         source: '/_next/static/:path*',
         headers: [
