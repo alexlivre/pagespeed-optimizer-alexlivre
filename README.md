@@ -253,7 +253,7 @@ When applied correctly, the skill produces:
 
 | Category | Target | Common cause when below target |
 | :--- | :--- | :--- |
-| Performance | 100/100 | Unoptimized images, render-blocking CSS, long JS tasks |
+| Performance | 100/100 | Unoptimized images, long JS tasks, unused or third-party blocking CSS |
 | Accessibility | 100/100 | Missing alt, low contrast, broken heading order |
 | Best Practices | 100/100 | Missing CSP, console errors, HTTPS not set |
 | SEO | 100/100 | Missing JSON-LD, no canonical, multiple H1s |

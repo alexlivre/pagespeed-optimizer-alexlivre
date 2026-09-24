@@ -253,6 +253,7 @@ input[type='radio'] {
 | 2.4.13 | Focus Appearance | AAA | 3px+ outline, 3:1 contrast vs adjacent background |
 | 2.5.7 | Dragging Movements | AA | Provide tap/click alternative |
 | 2.5.8 | Target Size (Minimum) | AA | 24×24 CSS px minimum |
+| 3.2.6 | Consistent Help | A | Help mechanisms (contact link, chat, FAQ, phone number) must appear in the same relative position on every page |
 | 3.3.7 | Redundant Entry | A | Reuse previously-entered values within the same flow |
 | 3.3.8 | Accessible Authentication (Min) | AA | No CAPTCHA, no cognitive puzzles |
 | 3.3.9 | Accessible Authentication (Enhanced) | AAA | No recognition tests either |

@@ -17,12 +17,14 @@ Allow: /
 # AI Search Engines (Allowed for Referral Traffic & Citations)
 User-agent: OAI-SearchBot
 User-agent: PerplexityBot
-User-agent: Claude-Web
 Allow: /
 
 # AI Model Training Scrapers (Blocked)
+# Claude-Web belongs here, not above. It is Anthropic's fetching crawler, and
+# references/geo.md section 3 classifies it as a training scraper to block.
 User-agent: GPTBot
 User-agent: ClaudeBot
+User-agent: Claude-Web
 User-agent: Google-Extended
 User-agent: CCBot
 User-agent: Applebot-Extended

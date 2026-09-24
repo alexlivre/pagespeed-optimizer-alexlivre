@@ -1,26 +1,36 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "name": "example-web-service",
+  "$schema": "https://modelcontextprotocol.io/schema/manifest/v1.json",
+  "name": "Project Name WebMCP",
+  "description": "Exposes verified machine resources and tools for autonomous AI agents",
   "version": "1.0.0",
-  "description": "WebMCP declarative browser agent manifest conforming to Chrome 149+ origin trial specification.",
-  "endpoints": {
-    "manifest": "https://example.com/mcp-manifest.json",
-    "tools": [
-      {
-        "name": "submit_inquiry",
-        "description": "Submits a user contact or quote inquiry form.",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "name": { "type": "string" },
-            "email": { "type": "string", "format": "email" },
-            "message": { "type": "string" }
-          },
-          "required": ["name", "email", "message"]
+  "author": {
+    "name": "Organization or Author Name",
+    "url": "https://example.com"
+  },
+  "resources": [
+    {
+      "uri": "mcp://example/docs",
+      "url": "https://example.com/llms-full.txt",
+      "name": "Full Documentation Corpus",
+      "description": "Complete unabridged documentation in raw markdown",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "tools": [
+    {
+      "name": "submit_inquiry",
+      "description": "Submits a user contact or quote inquiry form.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "message": { "type": "string" }
         },
-        "targetUrl": "https://example.com/api/inquiry",
-        "method": "POST"
-      }
-    ]
-  }
+        "required": ["name", "email", "message"]
+      },
+      "targetUrl": "https://example.com/api/inquiry",
+      "method": "POST"
+    }
+  ]
 }
