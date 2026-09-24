@@ -9,7 +9,9 @@ description: "Optimize any web project for 100/100 on PageSpeed Insights (PSI), 
 
 This skill guides AI coding agents in analyzing, refactoring, and optimizing web applications to achieve 90-100 scores across PageSpeed Insights categories (**Performance**, **Accessibility**, **Best Practices**, **SEO**) and maximum visibility in AI search engines (**GEO - Generative Engine Optimization**).
 
-> **Skill version: 2026-07 — Lighthouse 13+ (Out 2025), Lighthouse 13.3 Agentic Browsing (Mai 2026), WCAG 2.2 AA (Out 2023).** Review quarterly against `developer.chrome.com/blog`.
+> **Skill version: 2026-09 — Lighthouse 13+ (Out 2025), Lighthouse 13.3 Agentic Browsing (Mai 2026), WCAG 2.2 AA (Out 2023).** Review quarterly against `developer.chrome.com/blog`.
+>
+> **2026-09 calibration — stylesheet delivery.** A non-render-blocking *layout* stylesheet is now treated as a defect, not an optimization: it paints the page with no layout and re-flows it when the file lands (CLS up to 1.0), and it breaks **desktop** first. See §2 and `references/performance.md` §8.
 
 ---
 
@@ -52,9 +54,10 @@ When requested to optimize a project for PageSpeed Insights & GEO:
                             │
 ┌───────────────────────────▼─────────────────────────────┐
 │ 2. Core Web Vitals & Performance Optimization           │
-│    • LCP (Hero preload, image format, render-blocking)  │
+│    • LCP (Hero preload, image format)                    │
+│    • CSS delivery (layout CSS must be render-blocking)   │
 │    • INP (Long tasks yield, async event handlers)       │
-│    • CLS (Explicit width/height, aspect-ratio, fonts)   │
+│    • CLS (width/height, aspect-ratio, fonts, CSS order) │
 │    • FCP/TBT (Minification, script deferral, CSS purge) │
 └───────────────────────────┬─────────────────────────────┘
                             │
@@ -80,8 +83,9 @@ When requested to optimize a project for PageSpeed Insights & GEO:
                             │
 ┌───────────────────────────▼─────────────────────────────┐
 │ 6. Verification & Automated Guardrails                  │
-│    • Run `node scripts/verify-rules.mjs` (0 failures)   │
-│    • Run `node scripts/audit.mjs <url>` (Lighthouse CLI)│
+│    • `node scripts/verify-rules.mjs` (0 failures)       │
+│    • `node scripts/cls-stress.mjs <url>` (late-CSS CLS) │
+│    • `node scripts/audit.mjs <url>` (Lighthouse CLI)    │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -103,8 +107,8 @@ Refer to [references/framework-recipes.md](references/framework-recipes.md) and 
 
 Read [references/performance.md](references/performance.md) for complete technical patterns.
 
-- **LCP (<2.5s)**: Preload hero image with `fetchpriority="high"`, eliminate render-blocking CSS/fonts, avoid lazy loading above the fold.
-- **CLS (<0.1)**: Declare explicit `width` and `height` on images/SVGs, use `font-display: swap`, reserve space for dynamic containers.
+- **LCP (<2.5s)**: Preload hero image with `fetchpriority="high"`, preconnect to third-party origins, avoid lazy loading above the fold. **Do not "eliminate render-blocking CSS"** — the stylesheet that carries layout must block the first paint. Only non-layout CSS (third-party fonts with metric-matched fallbacks) may load async.
+- **CLS (<0.1)**: Declare explicit `width` and `height` on images/SVGs, use `font-display: swap` with metric-matched fallbacks, reserve space for dynamic containers, pair `content-visibility: auto` with `contain-intrinsic-size`, and keep layout CSS render-blocking. **Desktop is the sensitive form factor for CSS-delivery CLS** — a green mobile score does not imply a green desktop.
 - **INP (<200ms)**: Break up long JS tasks (>50ms) using `scheduler.postTask` / `setTimeout`, defer third-party scripts.
 - **FCP / TBT**: Compress images to WebP/AVIF via `node scripts/convert-images.mjs [dir]`, minify JS/CSS, purge unused CSS rules.
 
@@ -153,7 +157,7 @@ Read [references/seo.md](references/seo.md) and [references/geo.md](references/g
 2. [ ] All images converted to WebP/AVIF with explicit `width` and `height`.
 3. [ ] All fonts set to `font-display: swap` and use size-adjusted fallbacks.
 4. [ ] Non-critical JS deferred or loaded asynchronously; long tasks broken with `scheduler.yield()`.
-5. [ ] Critical CSS inlined and ≤ 14KB (first TCP roundtrip); remaining CSS loaded asynchronously.
+5. [ ] Critical CSS inlined and ≤ 14KB (first TCP roundtrip); **layout CSS render-blocking**. Only non-layout CSS may load asynchronously (third-party fonts with metric-matched fallbacks).
 6. [ ] Brotli compression enabled on the origin or CDN.
 7. [ ] CSP with `strict-dynamic` + nonce deployed; `Cross-Origin-Opener-Policy: same-origin`.
 8. [ ] Accessibility: contrast, `alt`, `aria-label`, touch targets ≥ 24x24px, `:focus-visible`, `prefers-reduced-motion` (100 score).
@@ -164,7 +168,8 @@ Read [references/seo.md](references/seo.md) and [references/geo.md](references/g
 13. [ ] **Deterministic Gate (MANDATORY)**: Run `node scripts/verify-rules.mjs [path]` and confirm **0 FAILURES**.
 14. [ ] **Iron Law Verified**: Tracking scripts (GTM/GA4/Pixel) intact, query strings (UTMs) preserved in redirects, conversion forms functional.
 15. [ ] Lighthouse CI (Node 22.19+) runs against the deployed URL with score asserts ≥ 0.9 Performance and 1.0 A11y/BP/SEO.
-16. [ ] **Final gate**: Run Lighthouse CLI or `node scripts/audit.mjs <url>` against the deployed URL and confirm 100/100 in all four categories on **both mobile (default — what Google uses for ranking) and desktop** before declaring done:
+16. [ ] **Late-CSS CLS test (MANDATORY whenever stylesheet delivery is touched)**: `node scripts/cls-stress.mjs <url>` must exit 0 on **both** form factors. Lighthouse's simulated throttling does not reproduce a late stylesheet, so a CLI CLS pass is not proof.
+17. [ ] **Final gate**: Run Lighthouse CLI or `node scripts/audit.mjs <url>` against the deployed URL and confirm 100/100 in all four categories on **both mobile (default — what Google uses for ranking) and desktop** before declaring done:
     ```bash
     node scripts/audit.mjs <url>                         # automated dual mobile + desktop scorecard
     # or manual CLI:
@@ -173,5 +178,5 @@ Read [references/seo.md](references/seo.md) and [references/geo.md](references/g
     ```
     Expect ~81 BP on HTTP local dev — HTTPS is required to validate BP ≥ 95.
 
-> **CRITICAL HARD STOP:** The AI agent is STRICTLY FORBIDDEN from declaring "done" or concluding if `verify-rules.mjs` returns Exit Code 1. Every reported failure must be resolved before proceeding to the final Lighthouse run.
+> **CRITICAL HARD STOP:** The AI agent is STRICTLY FORBIDDEN from declaring "done" or concluding if `verify-rules.mjs` or `cls-stress.mjs` returns Exit Code 1. Every reported failure must be resolved before proceeding to the final Lighthouse run.
 

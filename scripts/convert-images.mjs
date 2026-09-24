@@ -148,10 +148,16 @@ function printPictureSnippet(samplePath) {
   console.log(`\n\x1b[1mRecommended <picture> Responsive Pattern for HTML/JSX:\x1b[0m`);
   console.log(`--------------------------------------------------------`);
   console.log(`<picture>
-  <source srcset="${baseRel}.avif" type="image/avif">
-  <source srcset="${baseRel}.webp" type="image/webp">
+  <source
+    srcset="${baseRel}-400.avif 400w, ${baseRel}-800.avif 800w, ${baseRel}-1200.avif 1200w"
+    sizes="(min-width: 1024px) 400px, 88vw"
+    type="image/avif">
+  <source
+    srcset="${baseRel}-400.webp 400w, ${baseRel}-800.webp 800w, ${baseRel}-1200.webp 1200w"
+    sizes="(min-width: 1024px) 400px, 88vw"
+    type="image/webp">
   <img
-    src="${baseRel}.webp"
+    src="${baseRel}-1200.webp"
     alt="Descriptive alternative text"
     width="1200"
     height="675"
@@ -161,7 +167,15 @@ function printPictureSnippet(samplePath) {
     style="width: 100%; height: auto; aspect-ratio: 16/9; object-fit: cover;"
   >
 </picture>`);
-  console.log(`--------------------------------------------------------\n`);
+  console.log(`--------------------------------------------------------`);
+  console.log(`\x1b[33mTwo things the snippet above depends on:\x1b[0m`);
+  console.log(`  1. \`sizes\` is mandatory whenever srcset uses width descriptors. Without it the`);
+  console.log(`     browser assumes 100vw and downloads your largest file for a 400px slot.`);
+  console.log(`     verify-rules.mjs rule 14 fails the build on a width-descriptor srcset with no sizes.`);
+  console.log(`  2. Generate the -400/-800/-1200 variants first, e.g.:`);
+  console.log(`     npx -y sharp-cli -i "${rel}" -o "${baseRel}-400.webp" resize 400 --withoutEnlargement --format webp`);
+  console.log(`     Adjust \`sizes\` to your real layout — a slot value larger than the rendered box`);
+  console.log(`     is the "image larger than needed" diagnostic in PageSpeed Insights.\n`);
 }
 
 run();

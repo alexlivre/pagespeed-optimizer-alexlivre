@@ -2,13 +2,19 @@
 
 /**
  * Deterministic Rules Linter & Optimization Gatekeeper
- * Validates 100% compliance with PageSpeed, WCAG 2.2 AA, SEO, GEO, and event hygiene.
+ * Validates 100% compliance with PageSpeed, CSS delivery strategy, WCAG 2.2 AA, SEO, GEO,
+ * and event hygiene — with zero dependencies and no browser.
  *
  * Usage:
  *   node scripts/verify-rules.mjs [targetDirectoryOrHtmlFile]
  * Example:
  *   node scripts/verify-rules.mjs ./demo-page
  *   node scripts/verify-rules.mjs index.html
+ *
+ * The CSS delivery rule (12) rejects any stylesheet that is not render-blocking, because
+ * a late stylesheet means the first paint has no layout and the page re-flows when the file
+ * arrives. That is the single most common way a "100/100" page still fails CLS on desktop.
+ * Opt out with <!-- pagespeed-allow-async-css --> only when the inline <style> covers all layout.
  */
 
 import fs from 'node:fs';
@@ -39,9 +45,10 @@ function findFiles(dir, extensions, fileList = []) {
   if (!stat.isDirectory()) {
     return [dir];
   }
+  const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', '.nuxt', '.output', '.vercel', '.wrangler', 'coverage']);
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
-    if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist') continue;
+    if (SKIP_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       findFiles(full, extensions, fileList);
@@ -222,6 +229,83 @@ function auditHtml(htmlPath) {
       pass('Preconnect hints present for marketing tracking tags (GTM/Pixel)');
     } else {
       console.log('  \x1b[33mℹ [TIP]\x1b[0m Tracking detected. Add <link rel="preconnect" href="https://www.googletagmanager.com"> to minimize LCP impact without breaking attribution.');
+    }
+  }
+
+  // 12. CSS Delivery Strategy — the late-CSS CLS trap
+  // A stylesheet that is not render-blocking lets the browser paint with no layout,
+  // then re-lay-out the whole page when the file lands. That is a CLS of up to 1.0,
+  // and it hits desktop hardest (desktop is ready to paint sooner than mobile).
+  const asyncCssOptOut = /<!--\s*pagespeed-allow-async-css\b/i.test(content);
+  const THIRD_PARTY_FONT_CSS = /(^|\/\/)(fonts\.googleapis\.com|fonts\.gstatic\.com)\//i;
+  const asyncCssLinks = [];
+
+  for (const tag of content.match(/<link\b[^>]*>/gi) || []) {
+    const rel = (tag.match(/\brel\s*=\s*["']([^"']*)["']/i)?.[1] ?? '').toLowerCase();
+    const as = (tag.match(/\bas\s*=\s*["']([^"']*)["']/i)?.[1] ?? '').toLowerCase();
+    const media = (tag.match(/\bmedia\s*=\s*["']([^"']*)["']/i)?.[1] ?? '').toLowerCase();
+    const href = tag.match(/\bhref\s*=\s*["']([^"']*)["']/i)?.[1] ?? '';
+    const hasOnload = /\bonload\s*=/i.test(tag);
+
+    const isPrintSwap = hasOnload && rel.includes('stylesheet') && media === 'print';
+    const isPreloadSwap = hasOnload && rel.includes('preload') && as === 'style';
+    if (isPrintSwap || isPreloadSwap) asyncCssLinks.push({ href, tag });
+  }
+
+  if (asyncCssLinks.length === 0) {
+    pass('No non-render-blocking stylesheet (layout CSS always blocks the first paint)');
+  } else if (asyncCssOptOut) {
+    console.log(`  \x1b[33mℹ [SKIP]\x1b[0m ${asyncCssLinks.length} non-render-blocking stylesheet(s) allowed by the \`pagespeed-allow-async-css\` marker. Remove the marker if the inline <style> does not cover 100% of the layout.`);
+  } else {
+    for (const item of asyncCssLinks) {
+      if (THIRD_PARTY_FONT_CSS.test(item.href)) {
+        console.log(`  \x1b[33mℹ [TIP]\x1b[0m Async third-party font CSS (${item.href}). Allowed — but every family it declares needs a metric-matched inline fallback (@font-face with size-adjust + ascent-override), otherwise the font swap shifts text.`);
+      } else {
+        fail(
+          `Non-render-blocking stylesheet: ${item.href || '(no href)'} — <${item.tag.slice(1, 60)}...`,
+          'Anything NOT inlined must be non-layout-critical. If this file carries layout (grid/flex/utility classes), it MUST be render-blocking: <link rel="stylesheet" href="...">. Or inline the critical CSS and add <!-- pagespeed-allow-async-css --> to confirm 100% of the layout is inlined.'
+        );
+      }
+    }
+  }
+
+  // 13. content-visibility:auto without a matched intrinsic size
+  const cvWithoutSize = [];
+  const ruleRe = /([^{}]+)\{([^}]*)\}/g;
+  let ruleMatch;
+  while ((ruleMatch = ruleRe.exec(content)) !== null) {
+    const selector = ruleMatch[1].trim();
+    const body = ruleMatch[2];
+    if (selector.startsWith('@')) continue;
+    if (!/content-visibility\s*:\s*auto/i.test(body)) continue;
+    if (/contain-intrinsic-size\s*:/i.test(body)) continue;
+    cvWithoutSize.push(selector.slice(0, 60));
+  }
+
+  if (cvWithoutSize.length === 0) {
+    pass('No content-visibility:auto without a paired contain-intrinsic-size');
+  } else {
+    for (const selector of cvWithoutSize) {
+      fail(
+        `content-visibility:auto without contain-intrinsic-size on "${selector}"`,
+        'The browser guesses the box size until the subtree renders, then the page jumps. Always pair them: content-visibility: auto; contain-intrinsic-size: 1px 400px;'
+      );
+    }
+  }
+
+  // 14. Responsive <source> sizing
+  const unsizedSources = (content.match(/<source\b[^>]*>/gi) || []).filter(
+    (tag) => /\bsrcset\s*=\s*["'][^"']*\d+w\b/i.test(tag) && !/\bsizes\s*=/i.test(tag)
+  );
+
+  if (unsizedSources.length === 0) {
+    pass('Every width-descriptor <source srcset> declares a matching sizes attribute');
+  } else {
+    for (const tag of unsizedSources) {
+      fail(
+        `<source> with a width-descriptor srcset but no sizes: <${tag.slice(1, 70)}...`,
+        'Without sizes the browser assumes 100vw and downloads the largest candidate. Add sizes="(min-width: 1024px) 400px, 88vw".'
+      );
     }
   }
 }

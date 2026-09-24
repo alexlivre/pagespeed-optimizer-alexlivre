@@ -26,7 +26,7 @@ $$\text{LCP} = \text{TTFB} + \text{Resource Load Delay} + \text{Resource Load Du
    <link rel="preload" fetchpriority="high" as="image" href="/hero.avif" type="image/avif" imagesrcset="/hero-400.avif 400w, /hero-800.avif 800w, /hero-1200.avif 1200w" imagesizes="100vw" />
    ```
 3. **Resource Load Duration (<40% LCP)**: Serve modern AVIF/WebP, use responsive `srcset` and `sizes`, preconnect to image CDN origin, Brotli-compress HTML.
-4. **Element Render Delay (<10% LCP)**: Inline critical CSS (≤ 14KB to fit the first TCP roundtrip), defer non-critical CSS, avoid client-side JS hero rendering.
+4. **Element Render Delay (<10% LCP)**: Inline the critical CSS (≤ 14KB to fit the first TCP roundtrip) and keep the rest **render-blocking**. Only CSS that carries no layout may be deferred — see §8, where deferring layout CSS costs up to 1.0 CLS. Avoid client-side JS hero rendering.
 
 ---
 
@@ -89,8 +89,10 @@ body {
 }
 ```
 
-### Non-Blocking Google Fonts Loading Pattern (with `<noscript>` Fallback)
-Avoid render-blocking stylesheets for third-party fonts:
+### Non-Blocking Google Fonts Loading (third-party font CSS only)
+
+A font stylesheet carries no layout rules, so it can load non-render-blocking — **provided every family it declares has a metric-matched inline fallback** (the `@font-face` block above). Without those overrides the swap shifts every line of text.
+
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -100,6 +102,8 @@ Avoid render-blocking stylesheets for third-party fonts:
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
 </noscript>
 ```
+
+> **Scope limit — read before copying this pattern.** `media="print"` + `onload` makes the file non-render-blocking. That is only safe for CSS that cannot affect layout. Applied to your own application or utility stylesheet (the one defining grid, flex, spacing, the type scale), the browser paints the page with **no layout at all** and then re-flows it when the file lands: CLS up to 1.0, worst on desktop. Third-party font CSS only — see §8 for the decision test.
 
 ---
 
@@ -221,7 +225,7 @@ Lighthouse reports two form factors. Both must hit the target:
 | Form factor | CPU/network throttle | Viewport | What Google uses |
 | :--- | :--- | :--- | :--- |
 | **Mobile** (default) | 4× CPU slowdown, 4G throttling | 412×823, DPR 2.625 | **Search ranking** (60%+ of queries are mobile) |
-| **Desktop** | None | 1350×940, DPR 1 | Desktop search ranking only |
+| **Desktop** | No CPU slowdown, ~40 ms RTT / 10 Mbit/s (still *simulated*) | 1350×940, DPR 1 | Desktop search ranking only |
 
 Validate both, in this order:
 
@@ -231,6 +235,17 @@ npx lighthouse <url> --view --preset=desktop        # desktop
 ```
 
 Mobile scores are typically 2-3× worse than desktop on the same page because of CPU/network throttling. A 100/100 on desktop with a failing mobile is a **ranking failure**. Fix mobile first; desktop follows.
+
+**One exception, and it is the one that bites: CLS.** For layout shift, desktop is the *more* sensitive form factor, not the less. Desktop has a much smaller window between "ready to paint" and "CSS applied", so a stylesheet that arrives even ~200 ms late already breaks desktop, while mobile tolerates ~500-800 ms before it does. A perfect mobile CLS says nothing about desktop CLS. Measured on one page with a deliberately delayed stylesheet:
+
+| Stylesheet arrives late by | Desktop CLS | Mobile CLS |
+| :--- | :--- | :--- |
+| 0 ms | 0 | 0 |
+| 200 ms | **1.006** | 0 |
+| 500 ms | 1.006 | 0.021 |
+| 800 ms | 1.006 | **1.023** |
+
+For anything touching CSS delivery, run `scripts/cls-stress.mjs` (see §8) on **both** form factors — a mobile-only run will pass on a broken page.
 
 In LHCI, set the form factor per URL or use separate jobs:
 
@@ -252,24 +267,54 @@ See `references/measurement.md` for the full CI setup.
 
 ---
 
-## 8. Critical CSS Inlining (≤ 14KB)
+## 8. Critical CSS & Stylesheet Delivery (the CLS trap)
 
-The first TCP roundtrip on a fresh TLS connection carries **~14KB** of HTML (minus headers). Inline critical above-the-fold styles inside a `<style>` block in `<head>`; load the rest asynchronously.
+The first TCP roundtrip on a fresh TLS connection carries **~14KB** of HTML (minus headers), so inlining the above-the-fold styles avoids a second round trip before the first paint.
+
+**The rule that matters more than the 14KB budget:**
+
+> Anything you do **not** inline must be unable to affect layout. Your own layout CSS must be render-blocking.
+
+"Defer the non-critical CSS" does not mean "defer the rest of the stylesheet". A utility bundle like Tailwind contains the entire layout — until it applies there is no `display:flex`, no grid, no spacing, no type scale. The browser paints the raw HTML, then re-flows everything when the file lands.
 
 ```html
+<!-- Correct: the layout CSS blocks the first paint -->
 <head>
-  <style>
-    /* Critical above-the-fold styles only — target < 14KB total */
-    :root { color-scheme: light dark; }
-    body { margin: 0; font-family: system-ui, sans-serif; }
-    .hero { min-height: 80vh; display: grid; place-items: center; }
-  </style>
-  <link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="/styles.css"></noscript>
+  <style>/* critical above-the-fold, ≤ 14KB */</style>
+  <link rel="stylesheet" href="/assets/app.css">
 </head>
 ```
 
-Tools: `critical` (npm), `penthouse`, `critters` (Webpack), `@tailwindcss/critical-css-plugin`.
+```html
+<!-- Wrong: browser paints unstyled, then re-flows when app.css arrives. CLS up to 1.0. -->
+<head>
+  <style>:root { color-scheme: light dark; } body { margin: 0; }</style>
+  <link rel="preload" href="/assets/app.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="/assets/app.css"></noscript>
+</head>
+```
+
+### Decision test — answer all three before deferring any stylesheet
+
+1. Does the file contain **any** rule that affects layout or geometry (grid, flex, position, width/height, margin, padding, font-size, line-height — including utility classes that do any of those)? → Then it must be render-blocking.
+2. Does the inline `<style>` reproduce the **complete** above-the-fold layout of that file? → If not, it must be render-blocking.
+3. Is it a **third-party font stylesheet** with metric-matched `@font-face` fallbacks already inline (§4)? → Only then is deferring safe.
+
+`scripts/verify-rules.mjs` enforces this as rule 12. If you are certain every layout rule is inlined, add `<!-- pagespeed-allow-async-css -->` to opt out — and only then.
+
+**Cost/benefit, measured:** making a 41.6 KB layout stylesheet render-blocking moved FCP by roughly +0.1 s and removed **24 points** of CLS weight (desktop 76 → 98). Trading 0.1 s of FCP (10% weight) to recover 24 points of CLS (25% weight) is not a close call.
+
+Tools for extracting the critical subset: `critical` (npm), `penthouse`, `critters` (Webpack), `@tailwindcss/critical-css-plugin`.
+
+### Verify it — the test Lighthouse cannot do
+
+Lighthouse's *simulated* throttling does not reproduce a late stylesheet. Measured on the same production URL: the CLI reported CLS 0.003 (98/100 — pass) while PageSpeed Insights reported 1.014 (76/100 — fail). Same page, same run parameters, opposite verdicts. Use the tool that forces the race:
+
+```bash
+node scripts/cls-stress.mjs https://your-deployed-url
+```
+
+It delays every matching stylesheet response so it lands after the first paint, then reports the resulting CLS on **both** desktop and mobile. Exit code 1 means the bug is still there.
 
 ---
 
@@ -292,7 +337,9 @@ Tell the browser that a subtree's layout, paint, or size will not affect the res
 }
 ```
 
-`content-visibility: auto` is the single largest CLS *and* render cost win for long pages and is supported across all major engines (Chrome 85+, Edge 85+, Firefox 125+, Safari 18+).
+`content-visibility: auto` is the largest render-cost win for long pages and is supported across all major engines (Chrome 85+, Edge 85+, Firefox 125+, Safari 18+).
+
+> **It is not a CLS win — it is a CLS risk.** With `content-visibility: auto` the browser reserves `contain-intrinsic-size` as a placeholder until the subtree renders. If the placeholder does not match the real height, the page jumps when the content appears. **Always pair the two** and make the intrinsic size a close estimate. `scripts/verify-rules.mjs` rule 13 fails any `content-visibility: auto` without a paired `contain-intrinsic-size`.
 
 ---
 

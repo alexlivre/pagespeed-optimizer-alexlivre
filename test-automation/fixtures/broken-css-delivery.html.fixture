@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deliberately broken fixture for the verify-rules gate</title>
+  <meta name="description" content="Negative fixture: every violation in this file is intentional and asserted by test-automation/gate.test.mjs.">
+  <link rel="canonical" href="https://example.com/">
+
+  <style>
+    :root { color-scheme: light dark; }
+    /* Violation 2 — content-visibility:auto with no paired contain-intrinsic-size */
+    .card-grid { content-visibility: auto; }
+  </style>
+
+  <!-- Violation 1 — same-origin layout CSS loaded non-render-blocking -->
+  <link rel="preload" as="style" href="/assets/styles.css">
+  <link rel="stylesheet" href="/assets/styles.css" media="print" onload="this.media='all'">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".tldr"] }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <h1>Deliberately broken fixture</h1>
+
+  <!-- Violation 3 — width-descriptor srcset with no sizes -->
+  <picture>
+    <source srcset="/assets/shot-400.avif 400w, /assets/shot-800.avif 800w" type="image/avif">
+    <img src="/assets/shot-800.avif" alt="Sample screenshot" width="800" height="400">
+  </picture>
+</body>
+</html>
