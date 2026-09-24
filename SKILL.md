@@ -25,7 +25,7 @@ PageSpeed Insights now runs **Lighthouse 13** (Chrome 143+). This skill is calib
 - **JSON API is a breaking change** — CI consumers must migrate to the new insight audit IDs.
 - **Performance scoring is unchanged** (still metric-based, not audit-based).
 
-**Lighthouse 13.3 (Mai 2026)** added a new **Agentic Browsing** category enabled by default, auditing: `llms.txt` presence, WebMCP, agent-centric a11y, and CLS for agents. See `references/geo.md` for the full decision matrix on `llms.txt` build vs skip (Google confirmed June 15 2026: `llms.txt` is **not** a ranking signal).
+**Lighthouse 13.1 (Abr 2026)** added a `baseline` compatibility audit to the default config (weight 0 — informative only). **13.3 (Mai 2026)** added the **Agentic Browsing** category, scored across `agent-accessibility-tree`, `cumulative-layout-shift` and `llms-txt`; the three WebMCP audits carry weight 0. **13.5 (Set 2026)** added `ard-schema` (Agent Resource Discovery, `.well-known/ai-catalog`). See `references/geo.md` §7 for the real audit IDs, weights and the `llms.txt` build-vs-skip matrix (Google, 15 Jun 2026: `llms.txt` is **not** a Search ranking signal, though it is a weight-1 agentic audit).
 
 **DO NOT recommend the removed audits** in any output. If a user references one, map it to the current insight or explain it was retired.
 

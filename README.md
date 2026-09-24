@@ -418,7 +418,7 @@ Two assertions pin both directions: the reference demo must clear the gate, and 
 ## ⚠️ Important Notes
 
 - **Lighthouse 13** (Oct 2025) replaced 17 audits with "insights" and removed 8 audits. Do not recommend removed audits (`first-meaningful-paint`, `font-size`, `no-document-write`, `offscreen-images`, `preload-fonts`, `third-party-facades`, `uses-passive-event-listeners`, `uses-rel-preload`).
-- **Lighthouse 13.3** (May 2026) added an `Agentic Browsing` audit category (llms.txt, WebMCP, agent a11y, CLS for agents).
+- **Lighthouse 13.3** (May 2026) added an `Agentic Browsing` audit category, scored across `agent-accessibility-tree`, `cumulative-layout-shift` and `llms-txt` (the WebMCP audits are weight 0). **13.5** (Sep 2026) added `ard-schema` (Agent Resource Discovery). Note that `cumulative-layout-shift` is scored in **both** Performance and Agentic Browsing, so one CLS fix moves two categories. See `references/geo.md` §7.
 - **llms.txt** is **not** a Google Search ranking factor (Google, June 15 2026). Build it only on developer-facing documentation sites.
 - **WebMCP** is experimental (Chrome 149 origin trial). Do not base a perfect score on it yet.
 - The skill must stay under **~200 lines** in `SKILL.md` to fit agent context windows. Move depth into `references/`.

@@ -148,6 +148,8 @@ For accurate BP scores during development:
 
 Other audits that show as `FAIL` in local reports (`unminified-javascript`, `unused-javascript`, `bf-cache`, `render-blocking-insight`) belong to the **Performance** category and do **not** affect the BP score. Do not interpret them as BP failures.
 
+The `baseline` audit — added to the default config in Lighthouse 13.1 — sits in the `best-practices-browser-compat` group with **weight 0**. It reports web-features Baseline compatibility, it is informative, and it does **not** move the BP score. Treat it as advice, not a gate.
+
 > Note: a `FAIL` on `render-blocking-insight` is often *correct and desired* — see `performance.md` §8. A render-blocking layout stylesheet is frequently the fix for late-CSS CLS, so do not chase that audit to zero.
 
 ---

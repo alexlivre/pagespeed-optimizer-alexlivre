@@ -64,6 +64,17 @@ lighthouse https://example.com/ --only-categories=performance --quiet --form-fac
 
 The `--only-categories` flag targets specific audits; useful for fast CI feedback loops.
 
+### 2.1. Calling the PageSpeed Insights API directly (four gotchas)
+
+`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=<url>` is the same engine as the UI, with traps the reference does not emphasize:
+
+1. **`strategy` defaults to `desktop`, not `mobile`.** The reference states the default is desktop. A call without `strategy` silently returns desktop scores — the exact opposite of the CLI, where mobile is the default. Always pass `strategy=mobile` explicitly.
+2. **The `category` enum lags the product.** The reference documents only `accessibility`, `best-practices`, `performance`, `seo`; the Agentic Browsing category shipped to PSI after that page was written. Request the documented four, then read `lighthouseResult.categories` for whatever else the run returned.
+3. **Field data (CrUX) is being removed from this API.** Google's notice: *"We plan to stop including real Chrome User Experience Report data in this API. We recommend the CrUX API or the CrUX History API."* Read field data from CrUX (§5) and treat `loadingExperience` / `originLoadingExperience` as deprecated. Watch the metric names too: the response still carries legacy keys such as `FIRST_INPUT_DELAY_MS`, and INP arrives as `INTERACTION_TO_NEXT_PAINT`.
+4. **Without an API key you share a small anonymous quota.** Repeated calls against the same URL start returning `429 Too Many Requests` quickly. Request a free key and append `&key=YOUR_API_KEY`; embedding a key in a URL is supported.
+
+**Version skew**: PSI runs a newer Lighthouse than `npx` may resolve locally (PSI 13.5.x while this repo was validated against 13.4.1). Release notes put a new Lighthouse in PSI roughly two weeks after the npm release, so a CLI-versus-PSI difference can be a version difference. Record `lighthouseResult.lighthouseVersion` alongside any measurement you keep.
+
 ---
 
 ## 3. Lighthouse CI (`@lhci/cli`)

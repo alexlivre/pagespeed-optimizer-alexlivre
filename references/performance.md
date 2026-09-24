@@ -304,6 +304,8 @@ The first TCP roundtrip on a fresh TLS connection carries **~14KB** of HTML (min
 
 **Cost/benefit, measured:** making a 41.6 KB layout stylesheet render-blocking moved FCP by roughly +0.1 s and removed **24 points** of CLS weight (desktop 76 → 98). Trading 0.1 s of FCP (10% weight) to recover 24 points of CLS (25% weight) is not a close call.
 
+**And it counts twice.** `cumulative-layout-shift` carries weight 1 in Performance *and* weight 1 in the Agentic Browsing category (`geo.md` §7), so one fix moves two categories. Confirmed in practice: a page scoring 2/3 on Agentic Browsing was failing exactly the CLS audit, and returned to 3/3 once the stylesheet was made render-blocking.
+
 Tools for extracting the critical subset: `critical` (npm), `penthouse`, `critters` (Webpack), `@tailwindcss/critical-css-plugin`.
 
 ### Verify it — the test Lighthouse cannot do

@@ -416,18 +416,30 @@ Reuse the existing semantic HTML5 vocabulary. Both crawlers and agents parse the
 
 ---
 
-## 7. Lighthouse 13.3 Agentic Browsing Audit
+## 7. Lighthouse Agentic Browsing Audit (13.3+)
 
-As of May 2026, the **Agentic Browsing** category is enabled by default in Lighthouse 13.3+ and includes:
+Enabled by default since Lighthouse 13.3 (May 2026). Real audit IDs and weights, read from a Lighthouse 13.4.1 run:
 
-| Sub-audit | What it checks | Pass criteria |
+| Audit ID | Weight | What it checks |
 | :--- | :--- | :--- |
-| `llms.txt` | File exists, is well-formed, has H1 + summary + H2 sections | PASS or N/A (404 is fine) |
-| WebMCP | Site exposes tool contracts via JS or HTML | PASS if registered |
-| Agent-centric a11y | Programmatic names, valid roles, accessible tree | Reuses axe-core a11y checks |
-| CLS for agents | Penalizes mid-task layout shifts | Reuses regular CLS measurement |
+| `agent-accessibility-tree` | **1** | Programmatic names and valid roles — the accessibility tree an agent has to navigate |
+| `cumulative-layout-shift` | **1** | Mid-task layout shifts, measured exactly as in Performance |
+| `llms-txt` | **1** when the file exists, **0** when absent (N/A) | H1, summary blockquote, links organised under H2 sections |
+| `webmcp-form-coverage` | 0 | Every WebMCP form declares tool annotations |
+| `webmcp-registered-tools` | 0 | Lists the registered WebMCP tools |
+| `webmcp-schema-validity` | 0 | WebMCP schema issues |
 
-**Important**: The Agentic Browsing category uses **pass/fail** signals, not a weighted 0-100 score. Missing `llms.txt` is `N/A` (not a fail). A server error returning 5xx for `/llms.txt` is the only state that **fails** the audit.
+**Three things that are easy to get wrong:**
+
+1. **It is scored, not pass/fail.** The category returns a 0-1 score distributed across the *applicable* audits. (An earlier version of this guide claimed there was no weighted score. That was wrong.)
+2. **The denominator moves.** `llms-txt` is weight 1 only when the file is present. Without it the audit is `notApplicable` with weight 0, and the category grades 2 audits instead of 3 — verified by comparing a page with `llms.txt` (3 applicable) against `example.com` (2 applicable). So "3/3" in the PSI UI means "3 applicable audits, all passing", not a fixed total.
+3. **`llms.txt` is not a ranking signal, but it *is* a scored agentic audit.** Google confirmed (15 June 2026) that the file does nothing for Search ranking or AI Overviews — it is a navigation aid for coding assistants. It nonetheless carries weight 1 here. Building it does not help you rank; it helps this score, and only on sites whose audience is developers. See §1 for the build-vs-skip matrix.
+
+The three **WebMCP audits carry weight 0** — collected but not scored, consistent with WebMCP still being an origin trial (§2). Do not expect them to move the number.
+
+> **Lighthouse 13.5 (Sep 2026)** added `ard-schema` — "Agent Resource Discovery", keyed off a `.well-known/ai-catalog` file — and groups it with `llms.txt` under "agent discovery". Confirm against PSI before treating ARD as a requirement: the audit does not exist in Lighthouse 13.4.
+
+**Leverage note**: `cumulative-layout-shift` carries weight 1 in **Performance** *and* weight 1 here, so a single CLS fix moves two categories. Confirmed in practice — a page scoring 2/3 on Agentic Browsing was failing exactly the CLS audit and returned to 3/3 once its stylesheet became render-blocking (`performance.md` §8).
 
 ---
 
