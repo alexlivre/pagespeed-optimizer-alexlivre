@@ -6,6 +6,22 @@ exit codes of the scripts involved.
 
 ---
 
+## 2026-09 — Security hardening and gate validation
+
+### Run 7: Security hardening, structured CLI execution and SECURITY.md
+- **Commands**:
+  - `node scripts/verify-rules.mjs ./demo-page`
+  - `node --test test-automation/gate.test.mjs`
+  - `uvx plugin-scanner scan . --format json`
+- **Result**: PASSED
+- **Gate assertions**: 20 passed, 0 failed
+- **Regression tests**: 2 passed, 0 failed
+- **HOL Security Scanner**: Score 100/100 (Grade A), 0 critical, 0 high, 0 medium, 0 low findings
+- **Fixes**: Replaced string-interpolated child_process execution with validated URL and structured argument array (`spawnSync`), and published `SECURITY.md`.
+- **Status**: [GATE CLEARED]
+
+---
+
 ## 2026-09 — Gate hardening and the late-CSS CLS regression test
 
 ### Run 6: CSS-delivery rules and their regression tests

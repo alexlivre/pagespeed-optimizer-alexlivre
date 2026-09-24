@@ -29,7 +29,7 @@
  *     proof. Pair this with scripts/cls-stress.mjs.
  */
 
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -64,9 +64,21 @@ Simulated throttling cannot see a late stylesheet — pair it with cls-stress.mj
   process.exit(0);
 }
 
-const targetUrl = argv.find((a) => !a.startsWith('--'));
-if (!targetUrl) {
+const rawTargetUrl = argv.find((a) => !a.startsWith('--'));
+if (!rawTargetUrl) {
   console.error('Missing <url>. Run with --help for usage.');
+  process.exit(1);
+}
+
+let targetUrl;
+try {
+  const parsed = new URL(rawTargetUrl);
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('Only http: and https: protocols are supported.');
+  }
+  targetUrl = parsed.href;
+} catch (urlError) {
+  console.error(`Invalid <url> "${rawTargetUrl}": ${urlError.message}`);
   process.exit(1);
 }
 
@@ -124,20 +136,26 @@ function runAudit(formFactor) {
   const reportPath = path.join(os.tmpdir(), `lh-${stamp}.json`);
   const profileDir = path.join(os.tmpdir(), `lh-profile-${stamp}`);
   const chromeFlags = `--headless=new --no-sandbox --user-data-dir=${profileDir}`;
-  const preset = formFactor === 'desktop' ? '--preset=desktop' : '';
-
-  // A dedicated --user-data-dir avoids the temp-profile collision that makes chrome-launcher
-  // throw EPERM on Windows during cleanup.
-  const cmd = `npx lighthouse "${targetUrl}" --output=json --output-path="${reportPath}" --quiet --chrome-flags="${chromeFlags}" ${preset}`;
+  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  const args = [
+    'lighthouse',
+    targetUrl,
+    '--output=json',
+    `--output-path=${reportPath}`,
+    '--quiet',
+    `--chrome-flags=${chromeFlags}`,
+    ...(formFactor === 'desktop' ? ['--preset=desktop'] : []),
+  ];
 
   console.log(`Running Lighthouse [${formFactor.toUpperCase()}] against ${targetUrl}...`);
 
   let cliError = null;
-  try {
-    execSync(cmd, { stdio: ['ignore', 'ignore', 'pipe'] });
-  } catch (err) {
-    const stderr = (err.stderr || '').toString().trim();
-    cliError = stderr.split('\n').filter(Boolean).slice(-2).join(' | ') || err.message;
+  const result = spawnSync(npxCmd, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+  if (result.error) {
+    cliError = result.error.message;
+  } else if (result.status !== 0) {
+    const stderr = (result.stderr || '').toString().trim();
+    cliError = stderr.split('\n').filter(Boolean).slice(-2).join(' | ') || `Exit code ${result.status}`;
   }
 
   // Trust the report file, not the exit code.
