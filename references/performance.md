@@ -224,7 +224,7 @@ Lighthouse reports two form factors. Both must hit the target:
 
 | Form factor | CPU/network throttle | Viewport | What Google uses |
 | :--- | :--- | :--- | :--- |
-| **Mobile** (default) | 4× CPU slowdown, 4G throttling | 412×823, DPR 2.625 | **Search ranking** (60%+ of queries are mobile) |
+| **Mobile** (default) | 4× CPU slowdown, 4G throttling | 412×823, DPR 1.75 (Moto G Power) | **Search ranking** (60%+ of queries are mobile) |
 | **Desktop** | No CPU slowdown, ~40 ms RTT / 10 Mbit/s (still *simulated*) | 1350×940, DPR 1 | Desktop search ranking only |
 
 Validate both, in this order:

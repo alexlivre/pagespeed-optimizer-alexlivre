@@ -81,12 +81,18 @@ if (!['desktop', 'mobile', 'both'].includes(FORM_FACTOR)) {
   process.exit(1);
 }
 
+/**
+ * Matches Lighthouse's own defaults so the CLS measured here is the CLS PSI would see.
+ * Mobile is MOTOGPOWER_EMULATION_METRICS (412x823 @1.75) and desktop is 1350x940 @1 — see
+ * lighthouse/core/config/constants.js. The DPR matters for the responsive-image advice even
+ * though it does not change layout-shift fractions.
+ */
 const FORM_FACTORS = {
   desktop: { label: 'Desktop 1350x940 @1x', metrics: { width: 1350, height: 940, deviceScaleFactor: 1, mobile: false } },
   mobile: {
-    label: 'Mobile 412x823 @2.625x',
-    metrics: { width: 412, height: 823, deviceScaleFactor: 2.625, mobile: true },
-    userAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36',
+    label: 'Mobile 412x823 @1.75x',
+    metrics: { width: 412, height: 823, deviceScaleFactor: 1.75, mobile: true },
+    userAgent: 'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36',
   },
 };
 

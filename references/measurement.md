@@ -97,7 +97,7 @@ ci:
         mobile: true
         width: 412
         height: 823
-        deviceScaleFactor: 2.625
+        deviceScaleFactor: 1.75
       throttling:
         rttMs: 150
         throughputKbps: 1638.4

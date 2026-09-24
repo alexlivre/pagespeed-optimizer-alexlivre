@@ -160,6 +160,25 @@ function runAudit(formFactor) {
   return { report, cliError, reportPath: KEEP_REPORTS ? reportPath : null };
 }
 
+/**
+ * The Agentic Browsing category (Lighthouse 13.3+) is scored 0-1, not a pass/fail list, and its
+ * weight is spread across whichever audits are applicable. `llms-txt` is weight 1 when the file
+ * exists and N/A with weight 0 when it does not, so the denominator is not a fixed 3 — count it.
+ */
+function summariseAgentic(category, audits) {
+  if (!category) return null;
+  const refs = (category.auditRefs ?? []).filter((ref) => ref.weight > 0);
+  const applicable = refs.filter((ref) => {
+    const score = audits[ref.id]?.score;
+    return score !== null && score !== undefined;
+  });
+  return {
+    score: category.score,
+    passed: applicable.filter((ref) => audits[ref.id].score === 1).length,
+    total: applicable.length,
+  };
+}
+
 function extract(report) {
   if (!report?.categories) return null;
   const { categories, audits } = report;
@@ -172,7 +191,7 @@ function extract(report) {
     bestPractices: score('best-practices'),
     seo: score('seo'),
     // Lighthouse 13.3+ only; older CLI builds omit the category entirely.
-    agenticBrowsing: agentic ? agentic.score : null,
+    agenticBrowsing: summariseAgentic(agentic, audits),
     fcp: audits['first-contentful-paint']?.displayValue ?? 'N/A',
     lcp: audits['largest-contentful-paint']?.displayValue ?? 'N/A',
     tbt: audits['total-blocking-time']?.displayValue ?? 'N/A',
@@ -264,10 +283,10 @@ if (hasBoth) {
 
   const mobileAgentic = metricsFor('mobile').agenticBrowsing;
   const desktopAgentic = metricsFor('desktop').agenticBrowsing;
-  if (mobileAgentic === null && desktopAgentic === null) {
-    console.log(' Agentic Browsing  | not reported by this Lighthouse build (13.3+ / PSI only)');
+  if (!mobileAgentic && !desktopAgentic) {
+    console.log(' Agentic Browsing  | not reported by this Lighthouse build (13.3+ only)');
   } else {
-    const show = (score) => (score === null ? 'n/a' : `${score}/3`);
+    const show = (summary) => (summary ? `${summary.passed}/${summary.total}` : 'n/a');
     console.log(` Agentic Browsing  | ${show(mobileAgentic).padEnd(24)} | ${show(desktopAgentic)}`);
   }
 } else {
@@ -281,7 +300,8 @@ if (hasBoth) {
     }
     console.log('--------------------------------------------------------');
     console.log(` FCP: ${metrics.fcp} | LCP: ${metrics.lcp} | TBT: ${metrics.tbt} | CLS: ${metrics.cls} | SI: ${metrics.si}`);
-    console.log(` Agentic Browsing: ${metrics.agenticBrowsing === null ? 'not reported by this build' : `${metrics.agenticBrowsing}/3`}`);
+    const agentic = metrics.agenticBrowsing;
+    console.log(` Agentic Browsing: ${agentic ? `${agentic.passed}/${agentic.total} applicable audits passed` : 'not reported by this build'}`);
   }
 }
 
