@@ -148,6 +148,43 @@ For accurate BP scores during development:
 
 Other audits that show as `FAIL` in local reports (`unminified-javascript`, `unused-javascript`, `bf-cache`, `render-blocking-insight`) belong to the **Performance** category and do **not** affect the BP score. Do not interpret them as BP failures.
 
+> Note: a `FAIL` on `render-blocking-insight` is often *correct and desired* — see `performance.md` §8. A render-blocking layout stylesheet is frequently the fix for late-CSS CLS, so do not chase that audit to zero.
+
+---
+
+## 3.2. A Service Worker Can Silently Defeat `Cache-Control: no-cache`
+
+If you ship a service worker whose **stale-while-revalidate** cache includes the HTML, it answers the first navigation after a deploy with the *previous* document before the network response arrives. Your `Cache-Control: no-cache, must-revalidate` on the HTML never gets to act, so users keep the old page until their second visit.
+
+**Symptoms:** a deploy reports success, hard-reload shows the new version, yet real users still get the old page — and "the fix didn't work" in production.
+
+**Fix:** make document navigations network-first and leave stale-while-revalidate to immutable assets.
+
+```js
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+  if (!event.request.url.startsWith(self.location.origin)) return;
+
+  // Documents revalidate against the network; assets keep the fast path.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
+    );
+    return;
+  }
+
+  // ...stale-while-revalidate for everything else
+});
+```
+
+Also bump `CACHE_NAME` on every deploy that changes the HTML or the CSS, or the previous cache entry keeps winning. And keep hashed/immutable assets out of the precache list, so they are never served stale.
+
 ---
 
 ## 4. Image Format & Aspect-Ratio Rules

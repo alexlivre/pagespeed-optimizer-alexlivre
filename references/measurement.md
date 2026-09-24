@@ -34,7 +34,7 @@ This reference is the bridge between "code that should be fast" and "code that *
 
 If they disagree, **trust field data for ranking decisions**, lab for debugging.
 
-The **Lighthouse CLI** is the canonical validator for PageSpeed Insights scores. Treat `npx lighthouse <url> --view` as the final gate before declaring a page done — not as a step in every iteration. Local HTTP scoring caps at ~81/100 in Best Practices because of the `is-on-https` audit; always validate BP against an HTTPS URL (or with `--ignore-certificate-errors` against a local HTTPS dev server).
+The **Lighthouse CLI** is the practical validator for PageSpeed Insights *categories*, but it is **not** a faithful reproduction of PSI. Its *simulated* throttling reconstructs the load timeline instead of observing a real one, and it does not reproduce a stylesheet that lands after the first paint. Measured on one production URL: the CLI reported CLS 0.003 (98/100 — pass) while PSI reported 1.014 (76/100 — fail). Treat a CLI pass as necessary, not sufficient, and for CSS delivery run `scripts/cls-stress.mjs` (§9). Treat `npx lighthouse <url> --view` as the gate before declaring a page done — not as a step in every iteration. Local HTTP scoring caps at ~81/100 in Best Practices because of the `is-on-https` audit; always validate BP against an HTTPS URL (or with `--ignore-certificate-errors` against a local HTTPS dev server).
 
 ---
 
@@ -50,12 +50,17 @@ lighthouse https://example.com/ --view
 # Headless output as JSON
 lighthouse https://example.com/ --output json --output-path ./lh.json --quiet
 
-# Mobile preset, Slow 4G + 4x CPU throttle (the default)
+# Mobile is the default: 4G throttling + 4x CPU slowdown
+lighthouse https://example.com/
+
+# Desktop is a separate run with the desktop preset
 lighthouse https://example.com/ --preset=desktop
 
-# Run multiple times to smooth variance
+# Single category for fast local feedback
 lighthouse https://example.com/ --only-categories=performance --quiet --form-factor=mobile
 ```
+
+> **Known blind spot.** Both runs above use *simulated* throttling, which reconstructs the load timeline rather than observing a real load. It does not reproduce a late stylesheet, so it can report a passing CLS on a page PSI scores at 1.0. §9 covers the test that does catch it.
 
 The `--only-categories` flag targets specific audits; useful for fast CI feedback loops.
 
@@ -100,8 +105,6 @@ ci:
       chromeFlags: '--no-sandbox'
       preset: undefined    # ensure preset doesn't override formFactor
   assert:
-      chromeFlags: '--no-sandbox'
-  assert:
     assertions:
       # Score-based (Lighthouse 13 categories)
       'categories:performance':  ['error', { minScore: 0.9 }]
@@ -126,7 +129,9 @@ ci:
       'resource-summary:total:size':     ['error', { maxNumericValue: 1500000 }]
 
       # Audit-specific (Lighthouse 13 insight IDs)
-      'render-blocking-insight':     ['error', { maxLength: 0 }]
+      # Do NOT assert `render-blocking-insight: maxLength 0` here. A render-blocking stylesheet is
+      # frequently the *fix* for late-CSS CLS — chasing zero render-blocking resources pushes you
+      # straight into the pattern that costs up to 1.0 CLS. Render-blocking on purpose is correct.
       'lcp-discovery-insight':       ['error', { maxLength: 0 }]
       'uses-long-cache-ttl':         ['error', { minLength: 1 }]
       'modern-image-formats':        ['warn',  { maxLength: 0 }]
@@ -241,8 +246,8 @@ CrUX is the **field data** Google Search uses to evaluate Core Web Vitals for ra
 # Via PageSpeed Insights (UI)
 open "https://pagespeed.web.dev/analysis?url=https://example.com"
 
-# Via the CrUX API (free, no key)
-curl "https://chromeuxreport.googleapis.com/v1/records:queryRecord?formFactor=PHONE&origin=example.com&key="
+# Via the CrUX API (free tier — but an API key is required)
+curl "https://chromeuxreport.googleapis.com/v1/records:queryRecord?formFactor=PHONE&origin=example.com&key=YOUR_API_KEY"
 ```
 
 The response includes `largest_contentful_paint`, `interaction_to_next_paint`, `cumulative_layout_shift`, `first_contentful_paint`, and `experimental_time_to_first_byte` at the 75th percentile.
@@ -332,8 +337,11 @@ while ((match = imgRegex.exec(html)) !== null) {
   }
 }
 
-// 2. Validate JSON-LD and MCP manifests parse cleanly
-document.querySelectorAll?.('script[type="application/ld+json"]').forEach(s => JSON.parse(s.textContent));
+// 2. Validate JSON-LD and MCP manifests parse cleanly.
+//    This runs in Node, so `document` does not exist — regex the HTML string instead.
+for (const block of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+  JSON.parse(block[1]);
+}
 if (fs.existsSync('mcp-manifest.json')) JSON.parse(fs.readFileSync('mcp-manifest.json', 'utf8'));
 
 console.log('✓ Pre-audit passed: 0 missing assets, valid JSON schemas.');
@@ -357,8 +365,37 @@ For most projects, the **lab (Lighthouse CI) + field (web-vitals RUM) + CrUX API
 
 ## 8. Common Measurement Pitfalls
 
-1. **Testing only desktop**: Mobile is 2-3× worse and is what Google primarily uses. Always run mobile-throttled runs.
-2. **One-shot PSI scores**: A single run has ±5 point variance. Use `--quiet --numberOfRuns=3` in CI.
+1. **Testing only one form factor**: Mobile is usually 2-3× worse because of CPU/network throttling — but **not for late-CSS CLS**, where desktop is the more fragile one (pitfall 7). Always run both.
+2. **One-shot PSI scores**: A single run has ±5 point variance. Use `numberOfRuns: 3` in the LHCI config, or repeat the CLI run and take the median.
 3. **Lab passing ≠ field passing**: A 100 lab score can coexist with field INP of 400ms because the lab does not exercise the long interactions users trigger.
 4. **Ignoring 3rd-party scripts**: Analytics, chat widgets, and ad scripts add hundreds of milliseconds of TBT that lab scores do not always capture. Audit them quarterly.
 5. **Not testing on slow devices**: 4× CPU throttle in DevTools approximates a mid-range Android. Use it for any user-facing change.
+6. **Trusting a lab CLS pass**: Lighthouse's simulated throttling does not reproduce a stylesheet that arrives after the first paint. Measured on one production URL: the CLI reported 0.003 (pass) while PSI reported 1.014 (fail). A lab CLS pass is not proof — run §9.
+7. **Assuming desktop is always the easier target**: for late-CSS CLS the opposite holds. Desktop breaks at ~200 ms of stylesheet lateness while mobile tolerates ~500-800 ms. A green mobile score can hide a completely broken desktop.
+
+---
+
+## 9. Late-CSS CLS Falsification Test
+
+Lab tools score what they happen to observe. A stylesheet that lands *after* the first paint is a race, and simulated throttling usually wins that race on the page's behalf — so the bug stays invisible until a slower real-world fetch loses it.
+
+`scripts/cls-stress.mjs` removes the luck: it drives a real Chrome over CDP, delays every matching stylesheet response so it is guaranteed to land after the first paint, and reports the resulting CLS.
+
+```bash
+node scripts/cls-stress.mjs https://your-deployed-url            # desktop + mobile (the default)
+node scripts/cls-stress.mjs http://localhost:8080 --delay=500    # a smaller delay
+node scripts/cls-stress.mjs https://example.com --form-factor=mobile
+```
+
+- **Zero dependencies.** Uses Node 22+'s built-in `WebSocket` to speak CDP directly. Needs a local Chrome/Chromium — set `CHROME_PATH` if it is not in a standard location.
+- **Exit code 1** when CLS exceeds the threshold (default 0.1) on any selected form factor, so it is safe to gate CI with.
+- **Always run `both`** (the default). A mobile-only run passes on a page that is badly broken on desktop.
+
+Validated on a page whose 41.6 KB layout stylesheet was loaded non-render-blocking:
+
+| Scenario | Desktop CLS | Mobile CLS | Verdict |
+| :--- | :--- | :--- | :--- |
+| CSS delayed 1200 ms, stylesheet non-render-blocking | **1.0069** | **1.0268** | FAIL |
+| CSS delayed 1200 ms, stylesheet render-blocking | 0 | 0 | PASS |
+
+That same page scored desktop **76/100 on PSI** and **98/100 on the Lighthouse CLI** — the CLI pass is exactly the false negative this test exists to remove.

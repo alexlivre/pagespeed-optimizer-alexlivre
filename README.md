@@ -1,6 +1,6 @@
 # PageSpeed Insights & GEO Optimizer (`pagespeed-optimizer-alexlivre`)
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/alexlivre/pagespeed-optimizer-alexlivre/releases)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/alexlivre/pagespeed-optimizer-alexlivre/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Conceived and developed by [Alex Santos (alexlivre)](https://alexlivre.dev/)** • [GitHub: @alexlivre](https://github.com/alexlivre) • [Collection: skills-alexlivre](https://github.com/alexlivre/skills-alexlivre)
@@ -30,8 +30,9 @@ When loaded, the skill guides an AI agent through:
 pagespeed-optimizer-alexlivre/
 ├── SKILL.md                          # Main entrypoint — agent loads this
 ├── scripts/
-│   ├── audit.mjs                     # Automated dual Lighthouse runner (mobile + desktop)
-│   ├── verify-rules.mjs              # Deterministic rule & code linter gate (prevents AI shortcuts)
+│   ├── verify-rules.mjs              # Deterministic rule & code linter gate (zero-dep, no browser)
+│   ├── cls-stress.mjs                # Late-CSS CLS falsification test (zero-dep, raw CDP)
+│   ├── audit.mjs                     # Dual Lighthouse runner (mobile + desktop scorecard)
 │   └── convert-images.mjs            # Native Node.js batch WebP/AVIF converter & <picture> generator
 ├── recipes/                          # Production-hardened server configurations
 │   ├── nginx.conf                    # Nginx (Brotli, 1-year immutable caching, CSP, HSTS)
@@ -145,7 +146,7 @@ The agent will auto-detect the skill by matching the `description` field against
 
 ## 🔧 Installing Lighthouse CLI
 
-The skill teaches optimizations, but **`npx lighthouse` is how you verify them**. Lighthouse runs the same engine that powers [pagespeed.web.dev](https://pagespeed.web.dev/), so a 100/100 in the CLI equals 100/100 on PSI.
+The skill teaches optimizations, but **`npx lighthouse` is how you verify them**. Lighthouse runs the same audit *engine* as [pagespeed.web.dev](https://pagespeed.web.dev/), but it does **not** reproduce PSI's load conditions — its simulated throttling cannot produce a stylesheet that lands after the first paint. Measured on one production URL: the CLI reported CLS 0.003 (98/100 — pass) while PSI reported 1.014 (76/100 — fail). The CLI is necessary, not sufficient; for CSS delivery use `scripts/cls-stress.mjs`.
 
 ### Requirements
 
@@ -263,7 +264,7 @@ When applied correctly, the skill produces:
 
 ## ✅ Verification
 
-**`npx lighthouse` is the canonical way to validate a PageSpeed Insights score.** It runs the same audit engine that powers [pagespeed.web.dev](https://pagespeed.web.dev/), so a Lighthouse CLI score of 100/100 in all four categories is equivalent to a 100/100 on PSI.
+**`npx lighthouse` is the practical way to validate PageSpeed Insights *categories* — with one documented blind spot.** It runs the same audit engine as [pagespeed.web.dev](https://pagespeed.web.dev/), but simulated throttling reconstructs the load timeline instead of observing a real one. It does not reproduce a stylesheet that arrives after the first paint, so it can report a passing CLS on a page PSI scores at 1.0. Treat a CLI pass as necessary, not sufficient, and run the late-CSS test (`scripts/cls-stress.mjs`) on any CSS-delivery change.
 
 **Requirements**:
 - Node.js **22.19+** (Lighthouse 13 requirement)
@@ -282,7 +283,10 @@ AI coding agents often take shortcuts or skip checklist items due to context deg
 node scripts/verify-rules.mjs [path-to-project-or-file]
 ```
 
-This validates 15+ non-negotiable optimization rules in milliseconds:
+This validates 20 non-negotiable optimization rules in milliseconds, with no dependencies and no browser:
+- **CSS delivery**: no non-render-blocking stylesheet — the late-CSS CLS trap (rule 12)
+- **`content-visibility: auto`** always paired with `contain-intrinsic-size` (rule 13)
+- **Width-descriptor `srcset`** always paired with `sizes` (rule 14)
 - Preloaded LCP hero images with `fetchpriority="high"`
 - Physical `width` and `height` on all `<img>` tags (prevents CLS)
 - Modern image formats and no lazy-loading on hero images
@@ -293,7 +297,19 @@ This validates 15+ non-negotiable optimization rules in milliseconds:
 
 > **Hard Stop Rule:** If `verify-rules.mjs` exits with code 1 (failures found), the agent is strictly prohibited from concluding the task. It must resolve all reported errors first.
 
-### Step 2: Final Lighthouse Audit Gate
+### Step 2: Late-CSS CLS Test (`cls-stress.mjs`)
+
+Lighthouse cannot see this class of bug, so it needs its own gate. Run it whenever stylesheet delivery changed:
+
+```bash
+node scripts/cls-stress.mjs https://your-deployed-url
+```
+
+Zero dependencies — it drives Chrome over raw CDP using Node's built-in `WebSocket`. It delays every stylesheet so it is guaranteed to land after the first paint, then reports the CLS on **both** desktop and mobile. Exit code 1 if either fails.
+
+**Always run both form factors.** Desktop is the sensitive one here: it breaks at roughly 200 ms of stylesheet lateness while mobile tolerates 500-800 ms, so a mobile-only run passes on a page that is badly broken on desktop.
+
+### Step 3: Final Lighthouse Audit Gate
 
 Run both mobile and desktop audits in this order:
 
@@ -388,6 +404,14 @@ npx lighthouse http://localhost:8080 --view --preset=desktop
 ```
 
 Three categories should hit 100; Best Practices caps at ~81 locally without HTTPS.
+
+The repository ships regression tests for the gate itself. Run them after touching any rule:
+
+```bash
+node --test test-automation/
+```
+
+Two assertions pin both directions: the reference demo must clear the gate, and `test-automation/fixtures/broken-css-delivery.html.fixture` — a page carrying all three layout traps on purpose — must fail it. A gate nobody tests drifts into always-green.
 
 ---
 
